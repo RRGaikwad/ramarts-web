@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Request a free quote from RamArts — Flex printing, LED boards, wedding printing, car wrapping & more. Fast response guaranteed.">
+  <title>Get Free Quote — RamArts Printing & Signage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700;800&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/animations.css">
+</head>
+<body>
+  <div class="offer-banner"><strong>Free Design Consultation</strong> — You're in the right place!</div>
+  <header class="header has-banner">
+    <div class="container nav">
+      <a href="index.html" class="logo">Ram<span>Arts</span></a>
+      <nav class="nav-menu">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="services.html" class="nav-link">Services</a>
+        <a href="portfolio.html" class="nav-link">Portfolio</a>
+        <a href="about.html" class="nav-link">About</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+        <a href="quote.html" class="btn btn-primary btn-sm">Get Quote</a>
+      </nav>
+      <a href="quote.html" class="btn btn-primary btn-sm nav-cta-desktop">Get Quote</a>
+      <button class="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <section class="page-hero has-banner">
+    <div class="container">
+      <h1 data-aos="fade-up">Get Your Free Quote</h1>
+      <nav class="breadcrumb" data-aos="fade-up" data-aos-delay="100"><a href="index.html">Home</a> / <span>Quote</span></nav>
+      <p style="color:var(--color-text-muted);margin-top:1rem;max-width:600px;margin-left:auto;margin-right:auto" data-aos="fade-up" data-aos-delay="150">Fill in the details below and we'll send your quote request directly to our WhatsApp for the fastest response.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container" style="max-width:720px">
+      <div class="form-card" data-aos="fade-up">
+        <form id="quote-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="name">Full Name *</label>
+              <input type="text" id="name" name="name" required placeholder="Your name">
+            </div>
+            <div class="form-group">
+              <label for="phone">Phone Number *</label>
+              <input type="tel" id="phone" name="phone" required placeholder="+91 98765 43210">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="business">Business Name</label>
+            <input type="text" id="business" name="business" placeholder="Your business (optional)">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="service">Service Type *</label>
+              <select id="service" name="service" required>
+                <option value="">Select a service</option>
+                <option value="Flex & Banner Printing">Flex & Banner Printing</option>
+                <option value="Vinyl Printing">Vinyl Printing</option>
+                <option value="LED Sign Boards">LED Sign Boards</option>
+                <option value="Acrylic Laser Cutting">Acrylic Laser Cutting</option>
+                <option value="Wedding Printing">Wedding Printing</option>
+                <option value="Car Wrapping">Car Wrapping</option>
+                <option value="UV Backlite Frames">UV Backlite Frames</option>
+                <option value="Vinyl Stickers">Vinyl Stickers</option>
+                <option value="Radium Stickers">Radium Stickers</option>
+                <option value="Personalized Frames">Personalized Frames</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="quantity">Quantity / Size</label>
+              <input type="text" id="quantity" name="quantity" placeholder="e.g. 10x4 ft, 50 stickers">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Upload Design (optional)</label>
+            <div class="form-file">
+              <input type="file" id="design" accept="image/*,.pdf,.ai,.psd">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <p class="file-label">Click to upload your design file</p>
+              <p style="font-size:0.75rem;color:var(--color-text-muted);margin-top:0.5rem">JPG, PNG, PDF, AI, PSD</p>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="details">Requirement Details *</label>
+            <textarea id="details" name="details" required placeholder="Describe your project — size, material, colors, installation needs, deadline, etc."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg" style="width:100%"><i class="fab fa-whatsapp"></i> Request Instant Quote via WhatsApp</button>
+          <p style="text-align:center;font-size:0.85rem;color:var(--color-text-muted);margin-top:1rem">We typically respond within 1 hour during business hours.</p>
+        </form>
+        <div class="form-success">
+          <i class="fas fa-check-circle"></i>
+          <h3>Quote Request Sent!</h3>
+          <p>Our team will review your requirements and get back to you shortly on WhatsApp.</p>
+          <a href="index.html" class="btn btn-outline" style="margin-top:1rem">Back to Home</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-bottom" style="border-top:none;padding-top:0"><p>&copy; 2026 RamArts. All rights reserved.</p></div>
+  </footer>
+
+  <a href="https://wa.me/919876543210" class="floating-whatsapp" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+  <div class="sticky-call"><a href="tel:+919876543210"><i class="fas fa-phone"></i> Call Now</a></div>
+
+  <script src="js/site-content.js"></script>
+  <script src="js/content-loader.js"></script>
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/form.js"></script>
+  <script>AOS.init({ duration: 800, once: true });</script>
+</body>
+</html>
