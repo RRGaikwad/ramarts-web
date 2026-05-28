@@ -3,12 +3,11 @@
  */
 const RAMARTS_CMS_KEY = 'ramarts_site_content';
 const RAMARTS_CMS_AUTH_KEY = 'ramarts_cms_auth';
-const RAMARTS_CLOUD_SYNC_PREF_KEY = 'ramarts_cloud_sync_enabled';
 // Optional cloud sync:
 // 1) Fill values below, OR
 // 2) Define window.RAMARTS_CLOUD_CONFIG before this script loads.
 const RAMARTS_DEFAULT_CLOUD_CONFIG = {
-  enabled: false,
+  enabled: true,
   url: 'https://lzjcujbjilbedixixqcp.supabase.co',
   anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6amN1amJqaWxiZWRpeGl4cWNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTE5OTcsImV4cCI6MjA5NTUyNzk5N30.Lj4jwI1lYyK6bkjSXqbxxEAjXpKjaZP8W9kbp0L58DA',
   table: 'site_content',
@@ -287,16 +286,12 @@ function getContent() {
 
 function getCloudConfig() {
   const external = window.RAMARTS_CLOUD_CONFIG || {};
-  const merged = { ...RAMARTS_DEFAULT_CLOUD_CONFIG, ...external };
-  const toggle = localStorage.getItem(RAMARTS_CLOUD_SYNC_PREF_KEY);
-  if (toggle === 'true') merged.enabled = true;
-  if (toggle === 'false') merged.enabled = false;
-  return merged;
+  return { ...RAMARTS_DEFAULT_CLOUD_CONFIG, ...external };
 }
 
 function isCloudEnabled() {
   const cfg = getCloudConfig();
-  return Boolean(cfg.enabled && cfg.url && cfg.anonKey);
+  return Boolean(cfg.enabled !== false && cfg.url && cfg.anonKey);
 }
 
 function getCloudHeaders() {
@@ -504,7 +499,13 @@ async function initCloudSync() {
   if (!isCloudEnabled()) return;
   try {
     const remote = await fetchCloudContent();
-    if (!remote) return;
+    if (!remote) {
+      // Seed cloud with current content so row exists from first run.
+      const current = getContent();
+      await pushCloudContent(current);
+      cloudLastSavedPayload = JSON.stringify(current);
+      return;
+    }
     const merged = deepMerge(RAMARTS_DEFAULT_CONTENT, remote);
     localStorage.setItem(RAMARTS_CMS_KEY, JSON.stringify(merged));
     cloudLastSavedPayload = JSON.stringify(merged);
