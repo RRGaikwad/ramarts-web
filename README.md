@@ -25,6 +25,47 @@ Edit website content in real time with live preview:
 
 > Content is stored in your browser's **localStorage**. For production, export JSON and deploy with your site, or migrate to a backend later.
 
+### Cross-device live sync (Vercel + Supabase free)
+
+If you want edits/images from `admin.html` to appear on any device without redeploy:
+
+1. Create a Supabase project (free).
+2. In Supabase SQL Editor, run:
+
+```sql
+create table if not exists site_content (
+  id text primary key,
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
+alter table site_content enable row level security;
+
+create policy "public read site content"
+on site_content for select
+to anon
+using (true);
+
+create policy "public upsert site content"
+on site_content for insert
+to anon
+with check (id = 'ramarts');
+
+create policy "public update site content"
+on site_content for update
+to anon
+using (id = 'ramarts')
+with check (id = 'ramarts');
+```
+
+3. Open `js/site-content.js` and set:
+   - `enabled: true`
+   - `url: 'https://YOUR_PROJECT.supabase.co'`
+   - `anonKey: 'YOUR_SUPABASE_ANON_KEY'`
+4. Deploy to Vercel again (`git push`).
+
+Now CMS edits save to cloud and load on all devices.
+
 ### Images not showing?
 
 Browsers **cannot** load paths from your PC (e.g. `C:\Users\...\photo.jpg`). Use one of these:

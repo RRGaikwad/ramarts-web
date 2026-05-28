@@ -3,6 +3,17 @@
  */
 const RAMARTS_CMS_KEY = 'ramarts_site_content';
 const RAMARTS_CMS_AUTH_KEY = 'ramarts_cms_auth';
+const RAMARTS_CLOUD_SYNC_PREF_KEY = 'ramarts_cloud_sync_enabled';
+// Optional cloud sync:
+// 1) Fill values below, OR
+// 2) Define window.RAMARTS_CLOUD_CONFIG before this script loads.
+const RAMARTS_DEFAULT_CLOUD_CONFIG = {
+  enabled: false,
+  url: 'https://lzjcujbjilbedixixqcp.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6amN1amJqaWxiZWRpeGl4cWNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTE5OTcsImV4cCI6MjA5NTUyNzk5N30.Lj4jwI1lYyK6bkjSXqbxxEAjXpKjaZP8W9kbp0L58DA',
+  table: 'site_content',
+  recordId: 'ramarts',
+};
 
 const RAMARTS_DEFAULT_CONTENT = {
   brand: {
@@ -273,14 +284,100 @@ function getContent() {
   return deepMerge(RAMARTS_DEFAULT_CONTENT, stored || {});
 }
 
+function getCloudConfig() {
+  const external = window.RAMARTS_CLOUD_CONFIG || {};
+  const merged = { ...RAMARTS_DEFAULT_CLOUD_CONFIG, ...external };
+  const toggle = localStorage.getItem(RAMARTS_CLOUD_SYNC_PREF_KEY);
+  if (toggle === 'true') merged.enabled = true;
+  if (toggle === 'false') merged.enabled = false;
+  return merged;
+}
+
+function isCloudEnabled() {
+  const cfg = getCloudConfig();
+  return Boolean(cfg.enabled && cfg.url && cfg.anonKey);
+}
+
+function getCloudHeaders() {
+  const cfg = getCloudConfig();
+  return {
+    apikey: cfg.anonKey,
+    Authorization: `Bearer ${cfg.anonKey}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+async function fetchCloudContent() {
+  if (!isCloudEnabled()) return null;
+  const cfg = getCloudConfig();
+  const endpoint =
+    `${cfg.url}/rest/v1/${cfg.table}` +
+    `?id=eq.${encodeURIComponent(cfg.recordId)}&select=data&limit=1`;
+
+  const res = await fetch(endpoint, {
+    method: 'GET',
+    headers: getCloudHeaders(),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Cloud fetch failed (${res.status})`);
+  }
+
+  const rows = await res.json();
+  if (!Array.isArray(rows) || !rows[0] || !rows[0].data) return null;
+  return rows[0].data;
+}
+
+async function pushCloudContent(content) {
+  if (!isCloudEnabled()) return;
+  const cfg = getCloudConfig();
+  const endpoint = `${cfg.url}/rest/v1/${cfg.table}?on_conflict=id`;
+  const payload = [{ id: cfg.recordId, data: content }];
+
+  const res = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      ...getCloudHeaders(),
+      Prefer: 'resolution=merge-duplicates,return=minimal',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Cloud save failed (${res.status})`);
+  }
+}
+
+let cloudSaveTimer = null;
+let cloudLastSavedPayload = '';
+
+function scheduleCloudSave(content) {
+  if (!isCloudEnabled()) return;
+  const payload = JSON.stringify(content);
+  if (payload === cloudLastSavedPayload) return;
+
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(async () => {
+    try {
+      await pushCloudContent(content);
+      cloudLastSavedPayload = payload;
+    } catch (err) {
+      console.warn('[RamArts CMS] Cloud sync save failed:', err);
+    }
+  }, 700);
+}
+
 function saveContent(content) {
   localStorage.setItem(RAMARTS_CMS_KEY, JSON.stringify(content));
   window.dispatchEvent(new CustomEvent('ramarts-cms-update', { detail: content }));
+  scheduleCloudSave(content);
 }
 
 function resetContent() {
   localStorage.removeItem(RAMARTS_CMS_KEY);
-  window.dispatchEvent(new CustomEvent('ramarts-cms-update', { detail: getContent() }));
+  const defaults = getContent();
+  window.dispatchEvent(new CustomEvent('ramarts-cms-update', { detail: defaults }));
+  scheduleCloudSave(defaults);
 }
 
 function getByPath(obj, path) {
@@ -345,10 +442,31 @@ function resolveImageUrl(url) {
   return normalized || IMAGE_PLACEHOLDER;
 }
 
+async function initCloudSync() {
+  if (!isCloudEnabled()) return;
+  try {
+    const remote = await fetchCloudContent();
+    if (!remote) return;
+    const merged = deepMerge(RAMARTS_DEFAULT_CONTENT, remote);
+    localStorage.setItem(RAMARTS_CMS_KEY, JSON.stringify(merged));
+    cloudLastSavedPayload = JSON.stringify(merged);
+    window.dispatchEvent(new CustomEvent('ramarts-cms-update', { detail: merged }));
+  } catch (err) {
+    console.warn('[RamArts CMS] Cloud sync load failed:', err);
+  }
+}
+
+initCloudSync();
+
 window.RamArtsCMS = {
   KEY: RAMARTS_CMS_KEY,
   AUTH_KEY: RAMARTS_CMS_AUTH_KEY,
   DEFAULT: RAMARTS_DEFAULT_CONTENT,
+  CLOUD_CONFIG_DEFAULTS: RAMARTS_DEFAULT_CLOUD_CONFIG,
+  cloudEnabled: isCloudEnabled,
+  loadCloudContent: fetchCloudContent,
+  saveCloudContent: pushCloudContent,
+  initCloudSync,
   IMAGE_PLACEHOLDER,
   getContent,
   saveContent,
