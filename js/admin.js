@@ -7,6 +7,7 @@
   let previewVisible = false;
   let previewLoaded = false;
   const PREVIEW_PREF_KEY = 'ramarts_admin_preview_visible';
+  const ACTIVE_PANEL_KEY = 'ramarts_admin_active_panel';
 
   const previewPages = [
     { label: 'Home', url: 'index.html' },
@@ -62,16 +63,36 @@
   }
 
   function initNav() {
-    document.querySelectorAll('.admin-nav-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.admin-nav-btn').forEach((b) => b.classList.remove('active'));
-        document.querySelectorAll('.admin-panel').forEach((p) => p.classList.remove('active'));
-        btn.classList.add('active');
-        document.getElementById(`panel-${btn.dataset.panel}`)?.classList.add('active');
-        document.getElementById('editor-title').textContent = btn.textContent.trim();
-      });
+    const navButtons = Array.from(document.querySelectorAll('.admin-nav-btn'));
+    navButtons.forEach((btn) => {
+      btn.addEventListener('click', () => activatePanel(btn.dataset.panel));
     });
-    document.querySelector('.admin-nav-btn')?.click();
+
+    const savedPanel = localStorage.getItem(ACTIVE_PANEL_KEY);
+    const firstPanel = navButtons[0]?.dataset.panel;
+    const hasSavedPanel = savedPanel && navButtons.some((btn) => btn.dataset.panel === savedPanel);
+    activatePanel(hasSavedPanel ? savedPanel : firstPanel);
+  }
+
+  function activatePanel(panelName) {
+    if (!panelName) return;
+
+    document.querySelectorAll('.admin-nav-btn').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.panel === panelName);
+    });
+
+    document.querySelectorAll('.admin-panel').forEach((panel) => {
+      panel.classList.toggle('active', panel.id === `panel-${panelName}`);
+    });
+
+    const activeBtn = document.querySelector(`.admin-nav-btn[data-panel="${panelName}"]`);
+    const title = document.getElementById('editor-title');
+    if (title && activeBtn) {
+      title.textContent = activeBtn.textContent.trim();
+    }
+
+    localStorage.setItem(ACTIVE_PANEL_KEY, panelName);
+    activeBtn?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   }
 
   function initPreview() {
