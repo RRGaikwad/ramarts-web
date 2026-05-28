@@ -62,9 +62,37 @@ with check (id = 'ramarts');
    - `enabled: true`
    - `url: 'https://YOUR_PROJECT.supabase.co'`
    - `anonKey: 'YOUR_SUPABASE_ANON_KEY'`
+   - `storageBucket: 'ramarts-images'`
 4. Deploy to Vercel again (`git push`).
 
 Now CMS edits save to cloud and load on all devices.
+
+#### Required for global image uploads
+
+Create a public storage bucket and upload policies (SQL Editor):
+
+```sql
+insert into storage.buckets (id, name, public)
+values ('ramarts-images', 'ramarts-images', true);
+
+create policy "public read ramarts images"
+on storage.objects for select
+to anon
+using (bucket_id = 'ramarts-images');
+
+create policy "anon upload ramarts images"
+on storage.objects for insert
+to anon
+with check (bucket_id = 'ramarts-images');
+
+create policy "anon update ramarts images"
+on storage.objects for update
+to anon
+using (bucket_id = 'ramarts-images')
+with check (bucket_id = 'ramarts-images');
+```
+
+If a policy already exists, Supabase may show an "already exists" error — that's fine.
 
 ### Images not showing?
 

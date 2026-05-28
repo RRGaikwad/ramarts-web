@@ -614,7 +614,7 @@
     });
   }
 
-  function handleImageUpload(fileInput) {
+  async function handleImageUpload(fileInput) {
     const path = fileInput.dataset.uploadPath;
     const file = fileInput.files?.[0];
     if (!path || !file) return;
@@ -625,16 +625,45 @@
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      RamArtsCMS.setByPath(content, path, reader.result);
-      const textInput = document.querySelector(`[data-path="${path}"][data-image-input]`);
-      if (textInput) textInput.value = '(uploaded image — stored in browser)';
-      updateImagePreview(path);
-      debouncedSave();
-    };
-    reader.readAsDataURL(file);
+    const textInput = document.querySelector(`[data-path="${path}"][data-image-input]`);
+
+    if (RamArtsCMS.cloudEnabled?.()) {
+      try {
+        const group = path.replace(/\.\d+\./g, '.').replace(/\./g, '-');
+        const cloudUrl = await RamArtsCMS.uploadImageToCloud(file, group);
+        RamArtsCMS.setByPath(content, path, cloudUrl);
+        if (textInput) textInput.value = cloudUrl;
+        updateImagePreview(path);
+        persist();
+      } catch (err) {
+        console.warn('[RamArts CMS] Cloud image upload failed:', err);
+        alert(
+          'Cloud image upload failed. The image will be stored only on this device.\n\n' +
+            'Please check Supabase Storage bucket setup to make uploads globally visible.'
+        );
+        await saveImageInBrowser(file, path, textInput);
+      }
+      fileInput.value = '';
+      return;
+    }
+
+    await saveImageInBrowser(file, path, textInput);
     fileInput.value = '';
+  }
+
+  function saveImageInBrowser(file, path, textInput) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        RamArtsCMS.setByPath(content, path, reader.result);
+        if (textInput) textInput.value = '(uploaded image — stored in browser)';
+        updateImagePreview(path);
+        debouncedSave();
+        resolve();
+      };
+      reader.onerror = () => resolve();
+      reader.readAsDataURL(file);
+    });
   }
 
   function onInput(e) {

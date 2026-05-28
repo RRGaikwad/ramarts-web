@@ -13,6 +13,7 @@ const RAMARTS_DEFAULT_CLOUD_CONFIG = {
   anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6amN1amJqaWxiZWRpeGl4cWNwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTE5OTcsImV4cCI6MjA5NTUyNzk5N30.Lj4jwI1lYyK6bkjSXqbxxEAjXpKjaZP8W9kbp0L58DA',
   table: 'site_content',
   recordId: 'ramarts',
+  storageBucket: 'ramarts-images',
 };
 
 const RAMARTS_DEFAULT_CONTENT = {
@@ -307,6 +308,14 @@ function getCloudHeaders() {
   };
 }
 
+function getCloudAuthHeaders() {
+  const cfg = getCloudConfig();
+  return {
+    apikey: cfg.anonKey,
+    Authorization: `Bearer ${cfg.anonKey}`,
+  };
+}
+
 async function fetchCloudContent() {
   if (!isCloudEnabled()) return null;
   const cfg = getCloudConfig();
@@ -442,6 +451,55 @@ function resolveImageUrl(url) {
   return normalized || IMAGE_PLACEHOLDER;
 }
 
+function sanitizeFileName(name) {
+  return String(name || 'image')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function encodeObjectPath(path) {
+  return String(path)
+    .split('/')
+    .filter(Boolean)
+    .map((part) => encodeURIComponent(part))
+    .join('/');
+}
+
+async function uploadImageToCloud(file, group = 'uploads') {
+  if (!isCloudEnabled()) {
+    throw new Error('Cloud sync is not enabled.');
+  }
+  if (!file) {
+    throw new Error('No file selected.');
+  }
+
+  const cfg = getCloudConfig();
+  const safeGroup = sanitizeFileName(group || 'uploads') || 'uploads';
+  const safeName = sanitizeFileName(file.name || 'image.jpg') || 'image.jpg';
+  const objectPath = `${safeGroup}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+  const uploadUrl = `${cfg.url}/storage/v1/object/${cfg.storageBucket}/${encodeObjectPath(objectPath)}`;
+
+  const res = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      ...getCloudAuthHeaders(),
+      'x-upsert': 'true',
+      'Content-Type': file.type || 'application/octet-stream',
+    },
+    body: file,
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`Storage upload failed (${res.status}) ${detail}`);
+  }
+
+  return `${cfg.url}/storage/v1/object/public/${cfg.storageBucket}/${objectPath}`;
+}
+
 async function initCloudSync() {
   if (!isCloudEnabled()) return;
   try {
@@ -466,6 +524,7 @@ window.RamArtsCMS = {
   cloudEnabled: isCloudEnabled,
   loadCloudContent: fetchCloudContent,
   saveCloudContent: pushCloudContent,
+  uploadImageToCloud,
   initCloudSync,
   IMAGE_PLACEHOLDER,
   getContent,
